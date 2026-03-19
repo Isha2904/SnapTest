@@ -1,0 +1,32 @@
+name: Deploy Web App and Trigger Tests
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-and-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Web App Code
+        uses: actions/checkout@v4
+
+      # 1. Deploy the HTML/CSS/JS to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./src # Ensure this matches your folder name (e.g., ./src or ./)
+
+      # 2. Wait 10 seconds to ensure GitHub Pages is updated
+      - name: Wait for Deployment
+        run: sleep 10
+
+      # 3. Trigger the Automation Repo (SnapTest_Automation)
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.AUTO_REPO_TOKEN }} # The PAT secret you created earlier
+          repository: amogh4432/SnapTest_Automation
+          event-type: web_app_updated
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
